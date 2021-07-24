@@ -28,7 +28,7 @@ loadBalancer.server = http.createServer(function(req, res) {
 });
 
 loadBalancer._processRequest = function(options, orginalResponse) {
-  var req = https.request(options, res => {
+  var req = http.request(options, res => {
     console.log(`statusCode: ${res.statusCode}`);
 
     var buffer = '';
