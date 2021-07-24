@@ -1,39 +1,56 @@
 var http = require('http');
 var url = require('url');
 
-var serverConfig = [
-  {
-    scheme: 'http',
-    host: 'localhost:3000'
-  },
-  {
-    scheme: 'http',
-    host: 'localhost:3001'
-  }
-];
+var loadBalancer = {
+  count: 0
+};
 
-var count = 0;
-function pickServer() {
-  return serverConfig[count++ % serverConfig.length];
-}
+loadBalancer.pickServer = function() {
+  return this.config[this.count++ % this.config.length];
+};
 
-var server = http.createServer(function(req, res) {
-  var config = pickServer();
+loadBalancer.server = http.createServer(function(req, res) {
+  var config = loadBalancer.pickServer();
 
   var url = new URL(req.url, `${config.scheme}://${config.host}`);
 
   //console.log(url);
   console.log(req.method);
 
-  res.end('Load Balancer');
+  var options = {
+    hostname: url.host,
+    port: url.port,
+    path: req.path,
+    method: req.method
+  };
+
+  loadBalancer._processRequest(options, res);
 });
 
-var _processRequest = function(options, res) {};
+loadBalancer._processRequest = function(options, orginalResponse) {
+  var req = https.request(options, res => {
+    console.log(`statusCode: ${res.statusCode}`);
 
-var loadBalancer = {};
+    var buffer = '';
+    res.on('data', function(data) {
+      buffer += decoder.write(data);
+    });
 
-loadBalancer.start = function(port) {
-  server.listen(port, function() {
+    orginalResponse.writeHead(res.statusCode);
+    orginalResponse.end(buffer);
+  });
+
+  req.on('error', error => {
+    orginalResponse.end(error);
+  });
+
+  req.end();
+};
+
+loadBalancer.start = function(port, config) {
+  loadBalancer.config = config;
+
+  this.server.listen(port, function() {
     console.log('The Load Balancer is up and running now');
   });
 };
