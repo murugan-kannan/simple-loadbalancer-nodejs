@@ -17,4 +17,6 @@ var server = http.createServer(function (req, res) {
   
 });
 
-module.exports = server;
+server.listen(3001, function () {
+  console.log('The server1 is up and running now');
+});
